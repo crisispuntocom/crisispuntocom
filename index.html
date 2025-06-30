@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Radios & S&P 500 & Clima</title>
+  <style>
+    body {
+      background: #fff;
+      color: #111;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #111;
+      background: #fff;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 1rem;
+      background: #fff;
+      color: #111;
+      border: none;
+      border-right: 1px solid #e2e2e2;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .tab-btn:last-child { border-right: none; }
+    .tab-btn.active {
+      background: #111;
+      color: #fff;
+    }
+    .tab-content {
+      display: none;
+      padding: 2rem 1rem 5rem 1rem;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .stations {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
+      max-width: 320px;
+      margin: 2rem auto 0 auto;
+    }
+    .station-btn {
+      background: #fff;
+      color: #111;
+      border: 2px solid #111;
+      border-radius: 6px;
+      padding: 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      width: 100%;
+    }
+    .station-btn.active, .station-btn:focus {
+      background: #111;
+      color: #fff;
+      outline: none;
+    }
+    .sp500-box {
+      border: 2px solid #111;
+      border-radius: 8px;
+      padding: 1.2rem 1rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      font-size: 1.2rem;
+      background: #fafafa;
+    }
+    .sp500-big {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+    .sp500-variation {
+      font-size: 1.1rem;
+      margin-top: 0.5rem;
+    }
+    .radio-summary {
+      margin: 1.5rem 0 0.5rem 0;
+      font-size: 1.1rem;
+      text-align: center;
+    }
+    .clock {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 2rem 0 0 0;
+    }
+    .clock-canvas {
+      background: #fff;
+      border: 2px solid #111;
+      border-radius: 50%;
+      width: 120px;
+      height: 120px;
+      display: block;
+    }
+    .audio-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #fff;
+      border-top: 2px solid #111;
+      padding: 0.5rem 1rem 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .audio-bar audio {
+      width: 100%;
+      max-width: 400px;
+      outline: none;
+    }
+    .weather-section {
+      margin-bottom: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .weather-card {
+      min-width: 270px;
+      max-width: 370px;
+      margin: 1.5rem auto 2.5rem auto;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      padding: 2rem 1.2rem 1.5rem 1.2rem;
+      color: #111;
+      background: var(--weather-bg, #fafafa);
+      transition: background 0.7s;
+      position: relative;
+      text-align: center;
+    }
+    .weather-icon {
+      font-size: 3.2rem;
+      margin-bottom: 0.5rem;
+      transition: color 0.7s;
+      display: block;
+    }
+    .weather-city {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.5px;
+    }
+    .weather-current {
+      font-size: 1.7rem;
+      font-weight: bold;
+      margin-bottom: 0.3rem;
+    }
+    .weather-state {
+      font-size: 1.1rem;
+      margin-bottom: 0.7rem;
+      font-weight: 500;
+    }
+    .weather-extra {
+      font-size: 1rem;
+      color: #333;
+      margin-bottom: 0.7rem;
+      display: flex;
+      justify-content: center;
+      gap: 1.2rem;
+    }
+    .weather-extra span { white-space: nowrap; }
+    .weather-refresh-btn {
+      background: #fff;
+      border: 1.5px solid #111;
+      border-radius: 8px;
+      padding: 0.4rem 1.1rem;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 0.7rem;
+      transition: background 0.2s, color 0.2s, border 0.2s;
+    }
+    .weather-refresh-btn:hover {
+      background: #111;
+      color: #fff;
+      border: 1.5px solid #111;
+    }
+    .weather-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      margin-top: 1.5rem;
+    }
+    .weather-hourly {
+      display: flex;
+      overflow-x: auto;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .weather-hour {
+      min-width: 70px;
+      border: 1px solid #111;
+      border-radius: 6px;
+      padding: 0.5rem;
+      text-align: center;
+      background: #fafafa;
+      font-size: 0.95rem;
+    }
+    .weather-week {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+    .weather-day {
+      flex: 1 1 90px;
+      border: 1px solid #111;
+      border-radius: 6px;
+      padding: 0.5rem;
+      text-align: center;
+      background: #fafafa;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+    @media (max-width: 500px) {
+      .tab-content { padding: 1rem 0.2rem 5rem 0.2rem; }
+      .audio-bar audio { max-width: 98vw; }
+      .clock-canvas { width: 90px; height: 90px; }
+      .weather-hour, .weather-day { min-width: 60px; font-size: 0.9rem; }
+    }
+    /* CrisisPuntoCom cards */
+    .crisis-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    .crisis-card {
+      background: #fff;
+      border: 1.5px solid #e2e2e2;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      padding: 1.2rem 1rem 1rem 1rem;
+      transition: box-shadow 0.2s;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .crisis-card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+    }
+    .crisis-title {
+      font-size: 1.18rem;
+      font-weight: bold;
+      color: #111;
+      margin-bottom: 0.3rem;
+      text-decoration: none;
+      display: block;
+    }
+    .crisis-date {
+      color: #666;
+      font-size: 0.97rem;
+      margin-bottom: 0.7rem;
+    }
+    .crisis-desc {
+      color: #222;
+      font-size: 1rem;
+      margin-bottom: 0.2rem;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
+</head>
+<body>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="home">Inicio</button>
+    <button class="tab-btn" data-tab="radios">Radios</button>
+    <button class="tab-btn" data-tab="clima">Clima</button>
+    <button class="tab-btn" data-tab="crisis">CrisisPuntoCom</button>
+  </nav>
+
+  <section class="tab-content active" id="tab-home">
+    <div class="radio-summary">
+      <span>Radio sonando: <b id="current-radio">Ninguna</b></span>
+    </div>
+    <div class="weather-title">Clima actual</div>
+    <div id="weather-home"></div>
+    <div class="clock">
+      <canvas id="clock-canvas" class="clock-canvas" width="120" height="120"></canvas>
+    </div>
+  </section>
+
+  <section class="tab-content" id="tab-radios">
+    <h2 style="text-align:center; font-size:1.2rem; margin-bottom:1.5rem;">Radios Online</h2>
+    <div class="stations">
+      <button class="station-btn" data-url="https://mdstrm.com/audio/5d9d019112cbbb45d6a50960/live.m3u8" data-type="hls">Futurock FM</button>
+      <button class="station-btn" data-url="https://playerservices.streamtheworld.com/api/livestream-redirect/BLACKIE_89_1.mp3" data-type="mp3">Blackie FM</button>
+      <button class="station-btn" data-url="https://cdn.instream.audio:9660/stream" data-type="mp3">Urbana Play</button>
+    </div>
+  </section>
+
+  <section class="tab-content" id="tab-clima">
+    <h2 style="text-align:center; font-size:1.2rem; margin-bottom:1.5rem;">Clima</h2>
+    <div id="weather-location" class="weather-section"></div>
+  </section>
+
+  <section class="tab-content" id="tab-crisis">
+    <h2 style="text-align:center; font-size:1.2rem; margin-bottom:2rem;">CrisisPuntoCom en Substack</h2>
+    <div id="crisis-list" style="max-width:600px; margin:0 auto; padding:1rem;"></div>
+    <div style="text-align:center; margin-top:2rem; color:#666; font-size:1rem;">
+      Si no ves los artículos, abrí <a href="https://crisispuntocom.substack.com/" target="_blank" rel="noopener noreferrer">CrisisPuntoCom</a> directamente.
+    </div>
+  </section>
+
+  <div class="audio-bar">
+    <audio id="player" controls preload="none"></audio>
+  </div>
+
+  <script>
+    // Tabs
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const tab = btn.getAttribute('data-tab');
+        tabContents.forEach(tc => tc.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+      });
+    });
+
+    // Radios
+    const buttons = document.querySelectorAll('.station-btn');
+    const player = document.getElementById('player');
+    let currentBtn = null;
+    let hls = null;
+    let currentRadioName = 'Ninguna';
+    const currentRadioSpan = document.getElementById('current-radio');
+
+    function playStream(url, type, name) {
+      if (hls) {
+        hls.destroy();
+        hls = null;
+      }
+      if (type === 'hls' && Hls.isSupported()) {
+        hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(player);
+        hls.on(Hls.Events.MANIFEST_PARSED, function() {
+          player.play();
+        });
+      } else {
+        player.src = url;
+        player.play();
+      }
+      currentRadioName = name;
+      currentRadioSpan.textContent = name;
+    }
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const url = btn.getAttribute('data-url');
+        const type = btn.getAttribute('data-type');
+        const name = btn.textContent;
+        playStream(url, type, name);
+        if (currentBtn) currentBtn.classList.remove('active');
+        btn.classList.add('active');
+        currentBtn = btn;
+      });
+    });
+
+    // Clima
+    function getWeatherState(precip) {
+      if (precip >= 2) return 'Tormenta';
+      if (precip > 0) return 'Lluvia';
+      return 'Soleado';
+    }
+    function getWeatherIcon(state) {
+      if (state === 'Tormenta') return '⛈️';
+      if (state === 'Lluvia') return '🌧️';
+      if (state === 'Soleado') return '☀️';
+      return '⛅';
+    }
+    function getWeatherBg(state) {
+      if (state === 'Tormenta') return '#b2b6c6';
+      if (state === 'Lluvia') return '#b6d0e2';
+      if (state === 'Soleado') return '#ffe066';
+      return '#e0e7ef';
+    }
+    function getHourLabel(dt) {
+      return dt.split('T')[1].slice(0,5);
+    }
+    function getDayLabel(dt) {
+      const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+      const d = new Date(dt);
+      return dias[d.getDay()] + ' ' + d.getDate();
+    }
+    async function fetchWeather(lat, lon, elId, cityName) {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,precipitation,wind_speed_10m,relative_humidity_2m&hourly=temperature_2m,precipitation&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto`;
+      const res = await fetch(url);
+      const data = await res.json();
+      // Actual
+      const temp = data.current.temperature_2m;
+      const tempFeel = data.current.apparent_temperature;
+      const precip = data.current.precipitation;
+      const wind = data.current.wind_speed_10m;
+      const humidity = data.current.relative_humidity_2m;
+      const state = getWeatherState(precip);
+      const icon = getWeatherIcon(state);
+      const bg = getWeatherBg(state);
+      // Reverse geocoding para ciudad
+      let city = cityName;
+      try {
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+        const geoData = await geoRes.json();
+        if (geoData.address && (geoData.address.city || geoData.address.town || geoData.address.village)) {
+          city = geoData.address.city || geoData.address.town || geoData.address.village;
+        } else if (geoData.display_name) {
+          city = geoData.display_name.split(',')[0];
+        }
+      } catch {}
+      // Home resumen
+      if (elId === 'weather-home') {
+        document.getElementById(elId).innerHTML = `<b>${city}:</b> ${temp}°C, ${state}`;
+      }
+      // Detallado
+      let html = `<div class="weather-card" style="--weather-bg:${bg}">`;
+      html += `<span class="weather-icon">${icon}</span>`;
+      html += `<div class="weather-city">${city}</div>`;
+      html += `<div class="weather-current">${temp}°C</div>`;
+      html += `<div class="weather-state">${state}</div>`;
+      html += `<div class="weather-extra">
+        <span title="Sensación térmica">🌡️ ${tempFeel}°C</span>
+        <span title="Humedad">💧 ${humidity}%</span>
+        <span title="Viento">💨 ${wind} km/h</span>
+      </div>`;
+      html += `<button class="weather-refresh-btn" onclick="window.refreshWeatherSection()">Actualizar</button>`;
+      html += `<div class=\"weather-title\" style=\"margin-top:1.5rem;\">Por hora</div><div class=\"weather-hourly\">`;
+      for (let i = 0; i < 24; i++) {
+        const t = data.hourly.temperature_2m[i];
+        const p = data.hourly.precipitation[i];
+        const st = getWeatherState(p);
+        const label = getHourLabel(data.hourly.time[i]);
+        html += `<div class=\"weather-hour\"><div>${label}</div><div>${t}°C</div><div>${st}</div></div>`;
+      }
+      html += `</div>`;
+      html += `<div class="weather-title">Semana</div><div class="weather-week">`;
+      for (let i = 0; i < data.daily.temperature_2m_max.length; i++) {
+        const tmax = data.daily.temperature_2m_max[i];
+        const tmin = data.daily.temperature_2m_min[i];
+        const p = data.daily.precipitation_sum[i];
+        const st = getWeatherState(p);
+        const label = getDayLabel(data.daily.time[i]);
+        html += `<div class="weather-day"><div>${label}</div><div>${tmax}°C / ${tmin}°C</div><div>${st}</div></div>`;
+      }
+      html += `</div></div>`;
+      if (elId !== 'weather-home') {
+        document.getElementById(elId).innerHTML = html;
+      }
+    }
+    // Geolocalización para clima actual
+    function showWeatherForLocation() {
+      const home = document.getElementById('weather-home');
+      const loc = document.getElementById('weather-location');
+      if (!home || !loc) return;
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            fetchWeather(lat, lon, 'weather-home', 'Tu ubicación')
+              .catch(() => { home.innerHTML = 'No se pudo obtener el clima.'; });
+            fetchWeather(lat, lon, 'weather-location', 'Tu ubicación')
+              .catch(() => { loc.innerHTML = 'No se pudo obtener el clima.'; });
+          },
+          (error) => {
+            let msg = 'No se pudo obtener tu ubicación.';
+            if (error.code === 1) msg = 'Permiso de ubicación denegado.';
+            if (error.code === 2) msg = 'Ubicación no disponible.';
+            if (error.code === 3) msg = 'La solicitud de ubicación expiró.';
+            home.innerHTML = msg;
+            loc.innerHTML = msg;
+          }
+        );
+      } else {
+        home.innerHTML = 'Geolocalización no soportada.';
+        loc.innerHTML = 'Geolocalización no soportada.';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', showWeatherForLocation);
+
+    // Reloj analógico (hora y minutos)
+    const canvas = document.getElementById('clock-canvas');
+    const ctx = canvas.getContext('2d');
+    function drawClock() {
+      const now = new Date();
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      // Círculo
+      ctx.beginPath();
+      ctx.arc(w/2, h/2, w/2-6, 0, 2*Math.PI);
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      // Marcas de hora
+      for (let i = 0; i < 12; i++) {
+        const angle = (i-3) * (Math.PI*2)/12;
+        const x1 = w/2 + Math.cos(angle)*(w/2-18);
+        const y1 = h/2 + Math.sin(angle)*(h/2-18);
+        const x2 = w/2 + Math.cos(angle)*(w/2-10);
+        const y2 = h/2 + Math.sin(angle)*(h/2-10);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = '#111';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+      // Aguja hora
+      let hour = now.getHours()%12 + now.getMinutes()/60;
+      let hourAngle = (hour-3)*(Math.PI*2)/12;
+      ctx.beginPath();
+      ctx.moveTo(w/2, h/2);
+      ctx.lineTo(w/2 + Math.cos(hourAngle)*(w/2-38), h/2 + Math.sin(hourAngle)*(h/2-38));
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+      // Aguja minutos
+      let min = now.getMinutes();
+      let minAngle = (min-15)*(Math.PI*2)/60;
+      ctx.beginPath();
+      ctx.moveTo(w/2, h/2);
+      ctx.lineTo(w/2 + Math.cos(minAngle)*(w/2-22), h/2 + Math.sin(minAngle)*(h/2-22));
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      // Centro
+      ctx.beginPath();
+      ctx.arc(w/2, h/2, 5, 0, 2*Math.PI);
+      ctx.fillStyle = '#111';
+      ctx.fill();
+    }
+    setInterval(drawClock, 1000); // Actualiza cada segundo
+    drawClock();
+
+    // CrisisPuntoCom - Mostrar artículos desde RSS
+    async function fetchCrisisRSS() {
+      const container = document.getElementById('crisis-list');
+      container.innerHTML = 'Cargando artículos...';
+      try {
+        const res = await fetch('https://corsproxy.io/?https://crisispuntocom.substack.com/feed');
+        const text = await res.text();
+        const parser = new window.DOMParser();
+        const xml = parser.parseFromString(text, 'text/xml');
+        const items = Array.from(xml.querySelectorAll('item'));
+        if (!items.length) throw new Error('No hay artículos');
+        let html = '<div class="crisis-cards">';
+        items.slice(0, 10).forEach(item => {
+          const title = item.querySelector('title').textContent;
+          const link = item.querySelector('link').textContent;
+          const pubDate = new Date(item.querySelector('pubDate').textContent);
+          const dateStr = pubDate.toLocaleDateString('es-AR', { year: 'numeric', month: 'short', day: 'numeric' });
+          let desc = '';
+          const descNode = item.querySelector('description');
+          if (descNode) {
+            desc = descNode.textContent.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+            if (desc.length > 180) desc = desc.slice(0, 180) + '...';
+          }
+          html += `<div class="crisis-card">
+            <a href="${link}" target="_blank" rel="noopener noreferrer" class="crisis-title">${title}</a>
+            <div class="crisis-date">${dateStr}</div>
+            <div class="crisis-desc">${desc}</div>
+          </div>`;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+      } catch (e) {
+        container.innerHTML = 'No se pudieron cargar los artículos.';
+        console.error('Error al obtener RSS CrisisPuntoCom:', e);
+      }
+    }
+    // Mostrar los artículos al cargar la pestaña
+    document.querySelector('[data-tab="crisis"]').addEventListener('click', fetchCrisisRSS);
+
+    // Permitir refrescar clima manualmente
+    window.refreshWeatherSection = function() {
+      showWeatherForLocation();
+    }
+  </script>
+</body>
+</html>
